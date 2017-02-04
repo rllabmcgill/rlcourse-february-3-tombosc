@@ -1,0 +1,9 @@
+Cross-entropy method for improving weighted importance sampling, with experiments on the gambler's problem.
+
+I updated these experiments one day after the deadline (on saturday 4th Feb 2017).
+
+I added comparison with 2 on policy-methods:
+- MC with exploring starts (see gambler_mc_es.py)
+- MC with epsilong greedy behavior (see gambler_mc_eps_greedy.py)
+
+As for off-policy methods, I corrected the cross entropy method. Still, off-policy methods perform far worse. I sometimes experiment starting from a particular state (and choosing a random action), see start "something" in the names of the files. This is controlled by the start_from parameters.

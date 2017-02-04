@@ -3,11 +3,9 @@ import matplotlib.pyplot as plt
 from utils import step, generate_episode, greedify, epsilon_greedify
 
 """
-off-policy monte carlo every-visit with weighted importance sampling and 
-cross-entropy method
+off-policy monte carlo every-visit with weighted importance sampling. 
 
-The behavior is recomputed every ith iteration using k sample.
-(see loop inside policy_mc_iterate). It is epsilon greedy.
+The behavior is uniform random.
 
 the gambler has to gamble at least 1, the discount rate is 1.
 """
@@ -17,36 +15,24 @@ p_h = 0.3
 print "n:", n
 print "probability of heads:", p_h
 
-def policy_mc_iterate(n_iter=10, start_from = None, cross_entropy_call=None):
+def policy_mc_iterate(epsilon, max_iter=10, delta=10**-6, start_from = None):
     # init random policy pi[a,s]
     pi = np.zeros((n+1,n+1))
     for s in range(1, n+1):
         pi[1:s+1,s] = np.ones(s) * (1./s)
 
-    if cross_entropy_call == None:
-        # init uniform policy mu[a,s] that will be the behavior policy
-        mu = np.zeros((n+1,n+1))
-        for s in range(1, n+1):
-            mu[1:s+1,s] = np.ones(s) * (1./s)
-    else:
-        mu = cross_entropy_call
+    # init uniform policy mu[a,s] that will be the behavior policy
+    mu = np.zeros((n+1,n+1))
+    for s in range(1, n+1):
+        mu[1:s+1,s] = np.ones(s) * (1./s)
 
     # TODO: assert that pi and mu sum to 1 over actions
     
     q = np.zeros((n,n+1)) 
     C = np.zeros((n,n+1))
-    for i in range(1, n_iter):
-        if cross_entropy_call == None:
-            print "EPISODE", i
-            if i%1000 == 0: # update behavior
-                _, mu = policy_mc_iterate(n_iter=1000, start_from = None,
-                                          cross_entropy_call=mu)
-                mu = epsilon_greedify(mu, 0.05)
-
-            states, actions, rewards = generate_episode(mu, p_h, n, start_from=start_from)
-        else:
-            start = ((i+1)%n+1, None)
-            states, actions, rewards = generate_episode(mu, p_h, n, start)
+    for i in range(max_iter):
+        print "EPISODE", i
+        states, actions, rewards = generate_episode(mu, p_h, n, start_from=start_from)
         #print "states", states
         #print "actions", actions
         #print "rewards:", rewards
@@ -67,10 +53,14 @@ def policy_mc_iterate(n_iter=10, start_from = None, cross_entropy_call=None):
                 break
             W = W / mu[a,s]
 
+        #if np.linalg.norm(old_q - q) < delta:
+        #    print "break at iteration", i
+        #    break
+        mu = epsilon_greedify(pi, epsilon)
     return q, pi
 
 
-q, pi = policy_mc_iterate(n_iter=100000, start_from=None)
+q, pi = policy_mc_iterate(epsilon = 0.1, max_iter=100000, start_from=None)
 print q
 print pi
 
@@ -85,4 +75,4 @@ im_2 = ax2.imshow(pi[1:,1:n], interpolation='None', origin='lower',
 f.colorbar(im_2, ax=ax2)
 ax2.set_title("Target policy pi")
 plt.show()
-f.savefig("gambler_ce_p_0_3_100kit_start_random_eps_0_05_every_1000_1000_i.png")
+f.savefig("gambler_wis_eps_0_1_p_0_3_100kit_start_random.png")

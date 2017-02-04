@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import step, generate_episode
+from utils import step, generate_episode, greedify
 
 """
 off-policy monte carlo every-visit with weighted importance sampling. 
@@ -15,9 +15,7 @@ p_h = 0.3
 print "n:", n
 print "probability of heads:", p_h
 
-          
-    
-def policy_mc_iterate(max_iter=10, delta=10**-6):
+def policy_mc_iterate(max_iter=10, delta=10**-6, start_from = None):
     # init random policy pi[a,s]
     pi = np.zeros((n+1,n+1))
     for s in range(1, n+1):
@@ -27,12 +25,14 @@ def policy_mc_iterate(max_iter=10, delta=10**-6):
     mu = np.zeros((n+1,n+1))
     for s in range(1, n+1):
         mu[1:s+1,s] = np.ones(s) * (1./s)
+
+    # TODO: assert that pi and mu sum to 1 over actions
     
     q = np.zeros((n,n+1)) 
     C = np.zeros((n,n+1))
     for i in range(max_iter):
         print "EPISODE", i
-        states, actions, rewards = generate_episode(mu, p_h, n)
+        states, actions, rewards = generate_episode(mu, p_h, n, start_from=start_from)
         #print "states", states
         #print "actions", actions
         #print "rewards:", rewards
@@ -52,10 +52,14 @@ def policy_mc_iterate(max_iter=10, delta=10**-6):
             if action_max != a: # i.e. if mu[a,s] = 0
                 break
             W = W / mu[a,s]
+
+        #if np.linalg.norm(old_q - q) < delta:
+        #    print "break at iteration", i
+        #    break
     return q, pi
 
 
-q, pi = policy_mc_iterate(max_iter=200000)
+q, pi = policy_mc_iterate(max_iter=100000, start_from=None)
 print q
 print pi
 
@@ -70,4 +74,4 @@ im_2 = ax2.imshow(pi[1:,1:n], interpolation='None', origin='lower',
 f.colorbar(im_2, ax=ax2)
 ax2.set_title("Target policy pi")
 plt.show()
-f.savefig("gambler_wis_uni_p_0_3_200kit_randomstart2.png")
+f.savefig("gambler_wis_uni_p_0_3_100kit_start_random.png")
